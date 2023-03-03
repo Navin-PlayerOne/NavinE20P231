@@ -21,32 +21,28 @@ function isValidUrl(urlString) {
 
 app.get('/numbers', async(req, res) => {
     const set = new Set();
-    setTimeout(() => {
-       try {
-        res.send();
-       } catch (error) {
-        
-       }
-      }, 500);
     const body = req.query.url;
     for(let i=0;i<body.length;i++){
         if(isValidUrl(body[i])){
-            try {
-                const response = await axios.get(body[i]);
+          const timeout = 500;
+
+          const promises = body.map(url =>
+            axios.get(url, { timeout })
+              .then(response => {
                 for (const element of response.data.numbers) {
-                    set.add(element);
-                  }
-                //console.log(set);
-              } catch (error) {
-                //console.error(error);
-              }
+                  set.add(element);
+            }
+              })
+              .catch(error => console.log(`Error fetching ${url}: ${error.message}`))
+          );
+
+          Promise.all(promises)
+          .then(results => {
+                const sortedSet = Array.from(set).sort((a, b) => a - b);
+                console.log(sortedSet);
+                res.status(200).send({"numbers" :sortedSet});
+          })
+          .catch(error => console.log(`Error fetching data: ${error.message}`));
         }
-    }
-    try {
-        const sortedSet = Array.from(set).sort((a, b) => a - b);
-        console.log(sortedSet);
-        res.status(200).send({"numbers" :sortedSet});
-    } catch (error) {
-        
     }
 });
